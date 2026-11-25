@@ -1,24 +1,28 @@
 # Open Fonts Installer
 
-A zero-dependency interactive Bash script to download and install famous open-source fonts — including Persian/Arabic, Coding/Monospace, and UI/Sans-Serif typefaces — on **macOS**, **Linux**, and **Windows (Git Bash / WSL)**.
+Zero-dependency interactive scripts to download and install famous open-source fonts — including Persian/Arabic, Coding/Monospace, and UI/Sans-Serif typefaces — on **macOS**, **Windows**, and **Linux**.
 
 ## Features
 
+- **Native support for macOS, Windows, and Linux**
+  - **macOS / Linux:** [install-fonts.sh](install-fonts.sh) (pure Bash + `curl` + `unzip`)
+  - **Windows:** [install-fonts.ps1](install-fonts.ps1) (native PowerShell 5.1+ / PowerShell 7+, no admin rights required, registers fonts in `HKCU` and notifies running apps via `WM_FONTCHANGE`)
 - **Interactive multi-select menu** — pick individual fonts, ranges (`1-3,8`), or entire categories (`persian`, `code`, `ui`)
 - **CLI flags for scripting** — install or uninstall non-interactively
 - **Always up-to-date** — automatically fetches the latest GitHub Release for each font (with pinned fallback URLs if GitHub API is rate-limited)
 - **Clean & organized** — installs each font into its own subfolder so uninstalling is trivial
-- **Zero dependencies** — uses only `bash`, `curl`, `unzip`, and `find` (plus `fc-cache` on Linux)
 
 ## Quick Start
 
-### Run directly via `curl`
+### macOS & Linux (Bash)
+
+Run directly via `curl`:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HamidRezaAshkiyan/open-fonts-installer/main/install-fonts.sh | bash
 ```
 
-### Or clone and run locally
+Or clone and run locally:
 
 ```bash
 git clone https://github.com/HamidRezaAshkiyan/open-fonts-installer.git
@@ -26,7 +30,25 @@ cd open-fonts-installer
 ./install-fonts.sh
 ```
 
+### Windows (PowerShell)
+
+Run directly in **PowerShell** (no Administrator privileges needed):
+
+```powershell
+irm https://raw.githubusercontent.com/HamidRezaAshkiyan/open-fonts-installer/main/install-fonts.ps1 | iex
+```
+
+Or clone and run locally:
+
+```powershell
+git clone https://github.com/HamidRezaAshkiyan/open-fonts-installer.git
+cd open-fonts-installer
+powershell -ExecutionPolicy Bypass -File .\install-fonts.ps1
+```
+
 ## Usage
+
+### macOS / Linux (`install-fonts.sh`)
 
 ```bash
 # Interactive selector
@@ -55,7 +77,36 @@ cd open-fonts-installer
 ./install-fonts.sh --uninstall vazirmatn,inter
 ```
 
-> **Tip:** If you hit GitHub API rate limits (60 requests/hour unauthenticated), you can pass a token via `GITHUB_TOKEN=ghp_... ./install-fonts.sh`, or let the script automatically fall back to its verified release URLs.
+### Windows (`install-fonts.ps1`)
+
+```powershell
+# Interactive selector
+.\install-fonts.ps1
+
+# List all available fonts and their IDs
+.\install-fonts.ps1 -List
+
+# Install specific fonts by ID
+.\install-fonts.ps1 -Fonts vazirmatn,dastkhat,jetbrains-mono
+
+# Install an entire category (persian | code | ui)
+.\install-fonts.ps1 -Category persian
+.\install-fonts.ps1 -Category code
+
+# Install all fonts
+.\install-fonts.ps1 -All
+
+# Preview without downloading or installing
+.\install-fonts.ps1 -DryRun -Fonts vazirmatn,dastkhat
+
+# Install to a custom directory
+.\install-fonts.ps1 -Dir "$HOME\my-fonts" -Fonts vazirmatn
+
+# Uninstall specific fonts (also removes Windows registry entries)
+.\install-fonts.ps1 -Uninstall vazirmatn,inter
+```
+
+> **Tip:** If you hit GitHub API rate limits (60 requests/hour unauthenticated), you can pass a token via `GITHUB_TOKEN=ghp_...` (macOS/Linux) or `$env:GITHUB_TOKEN="ghp_..."` (Windows), or let the script automatically fall back to its verified release URLs.
 
 ## Included Fonts
 
@@ -96,9 +147,9 @@ cd open-fonts-installer
 ## Installation Paths
 
 - **macOS:** `~/Library/Fonts/open-fonts/<font-id>/`
+- **Windows:** `%LOCALAPPDATA%\Microsoft\Windows\Fonts\open-fonts\<font-id>\` (registered in `HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts`)
 - **Linux:** `~/.local/share/fonts/open-fonts/<font-id>/` (followed by `fc-cache -f`)
-- **Windows (Git Bash / MSYS2):** `%LOCALAPPDATA%\Microsoft\Windows\Fonts\open-fonts\<font-id>\`
 
 ## License
 
-This installer script is licensed under the [MIT License](LICENSE). Each downloaded font remains under its own respective open-source license (typically SIL OFL 1.1 or Apache 2.0).
+This installer is licensed under the [MIT License](LICENSE). Each downloaded font remains under its own respective open-source license (typically SIL OFL 1.1 or Apache 2.0).
