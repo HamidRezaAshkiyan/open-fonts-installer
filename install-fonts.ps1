@@ -9,6 +9,7 @@
 .EXAMPLE
     .\install-fonts.ps1
     .\install-fonts.ps1 -List
+    .\install-fonts.ps1 -Installed
     .\install-fonts.ps1 -Fonts vazirmatn,dastkhat,jetbrains-mono
     .\install-fonts.ps1 -Category persian
     .\install-fonts.ps1 -All -DryRun
@@ -18,6 +19,7 @@
 [CmdletBinding()]
 param(
     [switch]$List,
+    [switch]$Installed,
     [switch]$All,
     [ValidateSet("", "persian", "code", "ui")]
     [string]$Category = "",
@@ -133,6 +135,15 @@ function Test-FontInstalled([string]$Id) {
         Where-Object { $_.Extension -match '^\.(ttf|otf)$' } |
         Select-Object -First 1
     return ($null -ne $found)
+}
+
+function Get-FontFileCount([string]$Id) {
+    $targetDir = Join-Path $FONT_BASE_DIR $Id
+    if (-not (Test-Path -LiteralPath $targetDir -PathType Container)) {
+        return 0
+    }
+    return @(Get-ChildItem -LiteralPath $targetDir -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Extension -match '^\.(ttf|otf)$' }).Count
 }
 
 function Find-FontIndexById([string]$Id) {
@@ -334,6 +345,7 @@ function Show-Usage {
     Write-Host ""
     Write-Host "OPTIONS:" -ForegroundColor White
     Write-Host "  -List                     List all available fonts and their IDs"
+    Write-Host "  -Installed                Show which fonts are currently installed"
     Write-Host "  -All                      Install all fonts in the catalog"
     Write-Host "  -Category <CAT>           Install a category: persian, code, ui"
     Write-Host "  -Fonts <ID1,ID2,...>      Install specific fonts"
@@ -344,6 +356,7 @@ function Show-Usage {
     Write-Host ""
     Write-Host "EXAMPLES:" -ForegroundColor White
     Write-Host "  .\install-fonts.ps1                                       # Interactive selector"
+    Write-Host "  .\install-fonts.ps1 -Installed                            # Show installed fonts"
     Write-Host "  .\install-fonts.ps1 -Fonts vazirmatn,dastkhat,jetbrains-mono"
     Write-Host "  .\install-fonts.ps1 -Category persian"
     Write-Host "  .\install-fonts.ps1 -All -DryRun"
@@ -380,6 +393,44 @@ function Show-FontList {
     }
 }
 
+function Show-InstalledFonts {
+    Write-Host ""
+    Write-Host "Installed Open-Source Fonts ($FONT_BASE_DIR)" -ForegroundColor White
+    Write-Host ""
+
+    $installedCount = 0
+    $totalFiles = 0
+
+    foreach ($f in $FONT_CATALOG) {
+        if (Test-FontInstalled $f.Id) {
+            $fcount = Get-FontFileCount $f.Id
+            $installedCount++
+            $totalFiles += $fcount
+            $nameCol = $f.Name.PadRight(24)
+            $idCol = ("(" + $f.Id + ")").PadRight(20)
+            $countCol = ("{0,3} files" -f $fcount)
+            $fontDir = Join-Path $FONT_BASE_DIR $f.Id
+
+            Write-Host "  [OK] " -ForegroundColor Green -NoNewline
+            Write-Host "$nameCol " -NoNewline
+            Write-Host "$idCol " -ForegroundColor DarkGray -NoNewline
+            Write-Host "$countCol  " -NoNewline
+            Write-Host $fontDir -ForegroundColor DarkGray
+        }
+    }
+
+    if ($installedCount -eq 0) {
+        Write-Host "  No fonts installed yet in $FONT_BASE_DIR." -ForegroundColor DarkGray
+        Write-Host "  Run without flags to open the interactive selector, or use -List to browse."
+    } else {
+        Write-Host ""
+        Write-Host "Total: " -ForegroundColor White -NoNewline
+        Write-Host "$installedCount of $($FONT_CATALOG.Count)" -ForegroundColor Green -NoNewline
+        Write-Host " catalog fonts installed ($totalFiles font files)."
+    }
+    Write-Host ""
+}
+
 function Show-InteractiveMenu {
     $count = $FONT_CATALOG.Count
     $selected = New-Object bool[] $count
@@ -389,10 +440,15 @@ function Show-InteractiveMenu {
     while ($true) {
         try { Clear-Host } catch {}
 
+        $installedTotal = 0
+        for ($i = 0; $i -lt $count; $i++) {
+            if (Test-FontInstalled $FONT_CATALOG[$i].Id) { $installedTotal++ }
+        }
+
         Write-Host "======================================================================" -ForegroundColor Blue
         Write-Host "                 Open-Source Fonts Installer v$VERSION                  " -ForegroundColor Blue
         Write-Host "======================================================================" -ForegroundColor Blue
-        Write-Host "Install directory: $FONT_BASE_DIR" -ForegroundColor DarkGray
+        Write-Host "Install directory: $FONT_BASE_DIR  |  Installed: $installedTotal/$count" -ForegroundColor DarkGray
         Write-Host ""
 
         foreach ($cat in $CATEGORIES) {
@@ -424,7 +480,7 @@ function Show-InteractiveMenu {
 
         Write-Host "Commands:" -ForegroundColor White
         Write-Host "  1 2 8 or 1-3,8  Toggle fonts   a All   p Persian   c Code   u UI   n Clear" -ForegroundColor Cyan
-        Write-Host "  i / Enter       Install ($selCount selected)   q Quit" -ForegroundColor Green
+        Write-Host "  i / Enter       Install ($selCount selected)   s Installed   q Quit" -ForegroundColor Green
         Write-Host ""
 
         if (-not [string]::IsNullOrEmpty($msg)) {
@@ -454,6 +510,11 @@ function Show-InteractiveMenu {
             '^(q|quit|exit)$' {
                 Write-Host "Cancelled."
                 exit 0
+            }
+            '^(s|status|installed)$' {
+                try { Clear-Host } catch {}
+                Show-InstalledFonts
+                Read-Host "Press Enter to return to menu" | Out-Null
             }
             '^(a|all)$' {
                 for ($i = 0; $i -lt $count; $i++) { $selected[$i] = $true }
@@ -533,6 +594,11 @@ if ($Help) {
 
 if ($List) {
     Show-FontList
+    exit 0
+}
+
+if ($Installed) {
+    Show-InstalledFonts
     exit 0
 }
 

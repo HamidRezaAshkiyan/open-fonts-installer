@@ -127,6 +127,16 @@ is_font_installed() {
   return 1
 }
 
+count_font_files() {
+  local id="$1"
+  local dir="${FONT_BASE_DIR}/${id}"
+  if [[ ! -d "$dir" ]]; then
+    printf "0"
+    return
+  fi
+  find "$dir" -maxdepth 2 \( -iname '*.ttf' -o -iname '*.otf' \) 2>/dev/null | wc -l | tr -d ' '
+}
+
 find_index_by_id() {
   local target="$1"
   local i
@@ -300,6 +310,7 @@ ${BOLD}USAGE:${RESET}
 
 ${BOLD}OPTIONS:${RESET}
   -l, --list                  List all available fonts and their IDs
+  -i, --installed             Show which fonts are currently installed
   -a, --all                   Install all fonts in the catalog
   -c, --category <CAT>        Install a category: persian, code, ui
   -f, --fonts <ID1,ID2,...>   Install specific fonts (comma-separated)
@@ -310,6 +321,7 @@ ${BOLD}OPTIONS:${RESET}
 
 ${BOLD}EXAMPLES:${RESET}
   $(basename "$0")                                   # Interactive selector
+  $(basename "$0") --installed                       # Show installed fonts
   $(basename "$0") vazirmatn dastkhat jetbrains-mono # Install specific fonts
   $(basename "$0") --category persian                # Install all Persian fonts
   $(basename "$0") --all --dry-run                   # Preview installing all fonts
@@ -348,6 +360,38 @@ list_fonts() {
   done
 }
 
+list_installed_fonts() {
+  printf "\n%sInstalled Open-Source Fonts%s (%s)\n\n" "${BOLD}" "${RESET}" "${FONT_BASE_DIR}"
+  local installed_count=0
+  local total_files=0
+  local i
+
+  for (( i = 0; i < ${#FONT_CATALOG[@]}; i++ )); do
+    local entry="${FONT_CATALOG[$i]}"
+    local id name
+    id=$(get_field "$entry" 1)
+    name=$(get_field "$entry" 2)
+
+    if is_font_installed "$id"; then
+      local fcount
+      fcount=$(count_font_files "$id")
+      installed_count=$((installed_count + 1))
+      total_files=$((total_files + fcount))
+      printf "  %s✓%s %-24s %s%-19s%s %3s files  %s%s/%s%s\n" \
+        "${GREEN}${BOLD}" "${RESET}" "$name" "${DIM}" "($id)" "${RESET}" "$fcount" "${DIM}" "${FONT_BASE_DIR}" "$id" "${RESET}"
+    fi
+  done
+
+  if (( installed_count == 0 )); then
+    printf "  %sNo fonts installed yet in %s.%s\n" "${DIM}" "${FONT_BASE_DIR}" "${RESET}"
+    printf "  Run without flags to open the interactive selector, or use --list to browse.\n"
+  else
+    printf "\n%sTotal:%s %s%d of %d%s catalog fonts installed (%d font files).\n" \
+      "${BOLD}" "${RESET}" "${GREEN}" "$installed_count" "${#FONT_CATALOG[@]}" "${RESET}" "$total_files"
+  fi
+  printf "\n"
+}
+
 # --- Interactive Multi-Select Menu --------------------------------------------
 interactive_menu() {
   local count=${#FONT_CATALOG[@]}
@@ -368,10 +412,17 @@ interactive_menu() {
       printf "\033[H\033[2J"
     fi
 
+    local installed_total=0
+    for (( i = 0; i < count; i++ )); do
+      if is_font_installed "$(get_field "${FONT_CATALOG[$i]}" 1)"; then
+        installed_total=$((installed_total + 1))
+      fi
+    done
+
     printf "%s╔══════════════════════════════════════════════════════════════════════╗%s\n" "${BLUE}${BOLD}" "${RESET}"
     printf "%s║                   Open-Source Fonts Installer v%s                 ║%s\n" "${BLUE}${BOLD}" "${VERSION}" "${RESET}"
     printf "%s╚══════════════════════════════════════════════════════════════════════╝%s\n" "${BLUE}${BOLD}" "${RESET}"
-    printf "%sInstall directory:%s %s\n\n" "${DIM}" "${RESET}" "${FONT_BASE_DIR}"
+    printf "%sInstall directory:%s %s  %s|  Installed: %d/%d%s\n\n" "${DIM}" "${RESET}" "${FONT_BASE_DIR}" "${DIM}" "$installed_total" "$count" "${RESET}"
 
     local categories=("persian" "code" "ui")
     local cat_titles=("Persian / Arabic (RTL)" "Coding / Monospace" "UI / Sans-Serif")
@@ -417,8 +468,8 @@ interactive_menu() {
     printf "%sCommands:%s\n" "${BOLD}" "${RESET}"
     printf "  %s1 2 8%s or %s1-3,8%s  Toggle fonts    %sa%s All    %sp%s Persian    %sc%s Code    %su%s UI    %sn%s Clear\n" \
       "${CYAN}" "${RESET}" "${CYAN}" "${RESET}" "${CYAN}" "${RESET}" "${CYAN}" "${RESET}" "${CYAN}" "${RESET}" "${CYAN}" "${RESET}" "${CYAN}" "${RESET}"
-    printf "  %si%s / %sEnter%s       Install (%s%d selected%s)    %sq%s Quit\n\n" \
-      "${GREEN}${BOLD}" "${RESET}" "${GREEN}${BOLD}" "${RESET}" "${BOLD}" "$sel_count" "${RESET}" "${RED}" "${RESET}"
+    printf "  %si%s / %sEnter%s       Install (%s%d selected%s)    %ss%s Installed    %sq%s Quit\n\n" \
+      "${GREEN}${BOLD}" "${RESET}" "${GREEN}${BOLD}" "${RESET}" "${BOLD}" "$sel_count" "${RESET}" "${YELLOW}" "${RESET}" "${RED}" "${RESET}"
 
     if [[ -n "$msg" ]]; then
       printf "%s\n\n" "$msg"
@@ -453,6 +504,14 @@ interactive_menu() {
       q|Q|quit|exit)
         printf "Cancelled.\n"
         exit 0
+        ;;
+      s|S|status|installed)
+        if [[ -t 1 ]]; then
+          printf "\033[H\033[2J"
+        fi
+        list_installed_fonts
+        printf "%sPress Enter to return to menu...%s" "${DIM}" "${RESET}"
+        IFS= read -r _ < "$tty_in" || true
         ;;
       a|A|all)
         for (( i = 0; i < count; i++ )); do selected[$i]=1; done
@@ -550,6 +609,10 @@ main() {
         mode="list"
         shift
         ;;
+      -i|--installed)
+        mode="installed"
+        shift
+        ;;
       -a|--all)
         mode="all"
         shift
@@ -612,6 +675,10 @@ main() {
   case "$mode" in
     list)
       list_fonts
+      exit 0
+      ;;
+    installed)
+      list_installed_fonts
       exit 0
       ;;
     uninstall)

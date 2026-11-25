@@ -57,6 +57,9 @@ pwsh -ExecutionPolicy Bypass -File .\install-fonts.ps1
 # List all available fonts and their IDs
 ./install-fonts.sh --list
 
+# Show which fonts are currently installed
+./install-fonts.sh --installed
+
 # Install specific fonts by ID
 ./install-fonts.sh vazirmatn dastkhat jetbrains-mono
 
@@ -85,6 +88,9 @@ pwsh -ExecutionPolicy Bypass -File .\install-fonts.ps1
 
 # List all available fonts and their IDs
 .\install-fonts.ps1 -List
+
+# Show which fonts are currently installed
+.\install-fonts.ps1 -Installed
 
 # Install specific fonts by ID
 .\install-fonts.ps1 -Fonts vazirmatn,dastkhat,jetbrains-mono
