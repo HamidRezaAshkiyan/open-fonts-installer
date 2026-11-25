@@ -411,7 +411,7 @@ interactive_menu() {
 
     local sel_count=0
     for (( i = 0; i < count; i++ )); do
-      (( sel_count += selected[$i] ))
+      sel_count=$((sel_count + selected[$i]))
     done
 
     printf "%sCommands:%s\n" "${BOLD}" "${RESET}"
@@ -464,19 +464,25 @@ interactive_menu() {
         ;;
       p|P|persian)
         for (( i = 0; i < count; i++ )); do
-          [[ "$(get_field "${FONT_CATALOG[$i]}" 3)" == "persian" ]] && selected[$i]=1
+          if [[ "$(get_field "${FONT_CATALOG[$i]}" 3)" == "persian" ]]; then
+            selected[$i]=1
+          fi
         done
         msg="${GREEN}Selected all Persian / Arabic fonts.${RESET}"
         ;;
       c|C|code)
         for (( i = 0; i < count; i++ )); do
-          [[ "$(get_field "${FONT_CATALOG[$i]}" 3)" == "code" ]] && selected[$i]=1
+          if [[ "$(get_field "${FONT_CATALOG[$i]}" 3)" == "code" ]]; then
+            selected[$i]=1
+          fi
         done
         msg="${GREEN}Selected all Coding / Monospace fonts.${RESET}"
         ;;
       u|U|ui)
         for (( i = 0; i < count; i++ )); do
-          [[ "$(get_field "${FONT_CATALOG[$i]}" 3)" == "ui" ]] && selected[$i]=1
+          if [[ "$(get_field "${FONT_CATALOG[$i]}" 3)" == "ui" ]]; then
+            selected[$i]=1
+          fi
         done
         msg="${GREEN}Selected all UI / Sans-Serif fonts.${RESET}"
         ;;
