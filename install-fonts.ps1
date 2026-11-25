@@ -1,6 +1,7 @@
+#Requires -Version 7.0
 <#
 .SYNOPSIS
-    Open Fonts Installer for Windows (PowerShell 5.1+ / PowerShell 7+)
+    Open Fonts Installer for Windows (PowerShell 7+)
 .DESCRIPTION
     Interactive and CLI script to download and install famous open-source fonts
     (Persian/Arabic, Coding/Monospace, UI/Sans-Serif) on Windows without requiring

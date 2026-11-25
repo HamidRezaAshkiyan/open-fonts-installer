@@ -6,7 +6,7 @@ Zero-dependency interactive scripts to download and install famous open-source f
 
 - **Native support for macOS, Windows, and Linux**
   - **macOS / Linux:** [install-fonts.sh](install-fonts.sh) (pure Bash + `curl` + `unzip`)
-  - **Windows:** [install-fonts.ps1](install-fonts.ps1) (native PowerShell 5.1+ / PowerShell 7+, no admin rights required, registers fonts in `HKCU` and notifies running apps via `WM_FONTCHANGE`)
+  - **Windows:** [install-fonts.ps1](install-fonts.ps1) (native PowerShell 7 / `pwsh`, no admin rights required, registers fonts in `HKCU` and notifies running apps via `WM_FONTCHANGE`)
 - **Interactive multi-select menu** — pick individual fonts, ranges (`1-3,8`), or entire categories (`persian`, `code`, `ui`)
 - **CLI flags for scripting** — install or uninstall non-interactively
 - **Always up-to-date** — automatically fetches the latest GitHub Release for each font (with pinned fallback URLs if GitHub API is rate-limited)
@@ -30,9 +30,9 @@ cd open-fonts-installer
 ./install-fonts.sh
 ```
 
-### Windows (PowerShell)
+### Windows (PowerShell 7)
 
-Run directly in **PowerShell** (no Administrator privileges needed):
+Run directly in **PowerShell 7 (`pwsh`)** (no Administrator privileges needed):
 
 ```powershell
 irm https://raw.githubusercontent.com/HamidRezaAshkiyan/open-fonts-installer/main/install-fonts.ps1 | iex
@@ -43,7 +43,7 @@ Or clone and run locally:
 ```powershell
 git clone https://github.com/HamidRezaAshkiyan/open-fonts-installer.git
 cd open-fonts-installer
-powershell -ExecutionPolicy Bypass -File .\install-fonts.ps1
+pwsh -ExecutionPolicy Bypass -File .\install-fonts.ps1
 ```
 
 ## Usage
